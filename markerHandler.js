@@ -73,6 +73,7 @@ AFRAME.registerComponent("marker-handler", {
     } else {
       //Changing Model scale to initial scale
       var model = document.querySelector(`#model-${dish.id}`);
+      
       model.setAttribute("position", dish.modelGeometry.position);
       model.setAttribute("rotation", dish.modelGeometry.rotation);
       model.setAttribute("scale", dish.modelGeometry.scale);
@@ -92,8 +93,8 @@ AFRAME.registerComponent("marker-handler", {
 
       var ratingButton = document.getElementById("ratingButton");
       var orderButtton = document.getElementById("orderButton");
-      var orderSummaryButton = document.getElementById("orderSummaryButton")
-      var payButton = document.getElementById('pay-button')
+      /*var orderSummaryButton = document.getElementById("orderSummaryButton")
+      var payButton = document.getElementById('pay-button')*/
       ratingButton.addEventListener('click',()=>this.handleRating(dish))
 
 
@@ -279,7 +280,7 @@ AFRAME.registerComponent("marker-handler", {
 
   handleRating: async function(dish){
     var tNumber
-    tNumber <= 9 ? (tNumber = `T0${tNumber}`) : `T${tNumber}`
+    tableNumber <= 9 ? (tNumber = `T0${tableNumber}`) : `T${tableNumber}`
 
     var orderSummary = await this.getOrderSummary(tNumber)
     var currentOrder = Object.keys(orderSummary.currentOrder)
