@@ -209,7 +209,9 @@ AFRAME.registerComponent('create-marker',{
                 review.setAttribute("text", { font: "mozillavr", color: "black", width: 2.4, align: "center", value: `Customer Review: \n${dish.lastReview}` }); 
                 reviewPlane.appendChild(review); 
                 marker.appendChild(reviewPlane);
-            }   
+            } else{
+                
+            } 
         })
     },
     getDishes: async function(){

@@ -49,31 +49,21 @@ AFRAME.registerComponent("marker-handler", {
 
     // sunday - saturday : 0 - 6
     var days = [
-      "sunday",
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday"
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
     ];
 
     //Get the dish based on ID
     var dish = dishes.filter(dish => dish.id === markerId)[0];
-
     //Check if the dish is available today
-    if (dish.unavailable_days.includes(days[todaysDay])) {
-      swal({
-        icon: "warning",
-        title: dish.dish_name.toUpperCase(),
-        text: "This dish is not available today!!!",
-        timer: 2500,
-        buttons: false
-      });
-    } else {
+    if (!dish.unavailable_days.includes(days[todaysDay])) {
       //Changing Model scale to initial scale
       var model = document.querySelector(`#model-${dish.id}`);
-      
       model.setAttribute("position", dish.modelGeometry.position);
       model.setAttribute("rotation", dish.modelGeometry.rotation);
       model.setAttribute("scale", dish.modelGeometry.scale);
@@ -93,8 +83,8 @@ AFRAME.registerComponent("marker-handler", {
 
       var ratingButton = document.getElementById("ratingButton");
       var orderButtton = document.getElementById("orderButton");
-      /*var orderSummaryButton = document.getElementById("orderSummaryButton")
-      var payButton = document.getElementById('pay-button')*/
+      var orderSummaryButton = document.getElementById("orderSummaryButton")
+      var payButton = document.getElementById('pay-button')
       ratingButton.addEventListener('click',()=>this.handleRating(dish))
 
 
@@ -121,52 +111,60 @@ AFRAME.registerComponent("marker-handler", {
         payButton.addEventListener('click',()=>{
           this.handlePayment()
         })
-        ratingButton.addEventListener("click", function () {
-          swal({
-            icon: "warning",
-            title: "Rate Dish",
-            text: "Work In Progress"
-          });
-        });
       }
+    } else {
+      swal({
+        icon: "warning",
+        title: dish.dish_name.toUpperCase(),
+        text: "This dish is not available today!!!",
+        timer: 2500,
+        buttons: false
+      });
     }
   },
   handleOrder: function (tNumber, dish) {
     // Reading current table order details
-    firebase
+      firebase
       .firestore()
       .collection("tables")
       .doc(tNumber)
       .get()
       .then(doc => {
-        var details = doc.data();
-        if (details["currentOrder"][dish.id]) {
-          // Increasing Current Quantity
-          details["currentOrder"][dish.id]["quantity"] += 1;
-
-          //Calculating Subtotal of item
-          var currentQuantity = details["currentOrder"][dish.id]["quantity"];
-
-          details["currentOrder"][dish.id]["subtotal"] =
-            currentQuantity * dish.price;
-        } else {
-          details["currentOrder"][dish.id] = {
-            item: dish.dish_name,
-            price: dish.price,
-            quantity: 1,
-            subtotal: dish.price * 1
-          };
+        try{
+          var details = doc.data();
+          if (details["currentOrder"][dish.id]) {
+            // Increasing Current Quantity
+            details["currentOrder"][dish.id]["quantity"] += 1;
+  
+            //Calculating Subtotal of item
+            var currentQuantity = details["currentOrder"][dish.id]["quantity"];
+  
+            details["currentOrder"][dish.id]["subtotal"] =
+              currentQuantity * dish.price;
+          } else {
+            details["currentOrder"][dish.id] = {
+              item: dish.dish_name,
+              price: dish.price,
+              quantity: 1,
+              subtotal: dish.price * 1
+            };
+          }
+  
+          details.totalBill += dish.price;
+  
+          //Updating db
+          firebase
+            .firestore()
+            .collection("tables")
+            .doc(doc.id)
+            .update(details);
         }
-
-        details.totalBill += dish.price;
-
-        //Updating db
-        firebase
-          .firestore()
-          .collection("tables")
-          .doc(doc.id)
-          .update(details);
-      });
+        catch{
+          throw(`Table number ${tNumber} is not in the firestore documents`)
+          
+        }
+    });
+         
   },
 
   handleOrderSummary: async function(){
@@ -174,7 +172,6 @@ AFRAME.registerComponent("marker-handler", {
     tableNumber <= 9 ? (tNumber = `T0${tableNumber}`) : `T${tableNumber}`
     
     var orderSummary = await this.getOrderSummary(tNumber)
-
     var modalDiv = document.getElementById('modal-div')
 
     modalDiv.style.display = 'flex'
@@ -212,6 +209,7 @@ AFRAME.registerComponent("marker-handler", {
     //Create a empty cell (for not data) 
     var td1 = document.createElement("td"); 
     td1.setAttribute("class", "no-line"); 
+    td1.innerHTML = ''
     //Create a empty cell (for not data) 
     var td2 = document.createElement("td"); 
     td1.setAttribute("class", "no-line"); 
@@ -285,7 +283,7 @@ AFRAME.registerComponent("marker-handler", {
     var orderSummary = await this.getOrderSummary(tNumber)
     var currentOrder = Object.keys(orderSummary.currentOrder)
 
-    if(currentOrder.length > 0 && currentOrder === dish.id){
+    if(currentOrder.length > 0 && currentOrder.includes(dish.id)){
       document.getElementById('rating-modal-div').style.display = 'flex'
       document.getElementById('rating-input').value = '0'
       document.getElementById('feedback-input').value = ''
@@ -299,14 +297,14 @@ AFRAME.registerComponent("marker-handler", {
         var feedback = document.getElementById('feedback-input').value
         firebase.firestore()
         .collection('dishes')
-        .doc(dish.id)
+        .doc('d01')
         .update({
           lastReview:feedback,
           lastRating:rating,
         })
         .then(()=>{
           swal({
-            icon: 'Success',
+            icon: 'success',
             title: 'thanks for rating',
             text: 'We hope you liked it',
             timer: 2500,
